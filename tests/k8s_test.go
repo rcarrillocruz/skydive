@@ -69,15 +69,14 @@ func makeHasArgsType(mngr, ty interface{}, args1 ...interface{}) []interface{} {
 }
 
 func makeHasArgsNode(node *graph.Node, args1 ...interface{}) []interface{} {
-	m := map[string]interface{}(node.Metadata)
 	args := []interface{}{}
 	for _, key := range k8s.MetadataFields("Namespace", "Pod", "Name") {
-		if val, err := common.GetMapField(m, key); err == nil {
+		if val, err := node.GetField(key); err == nil {
 			args = append(args, key, val)
 		}
 	}
 	args = append(args, args1...)
-	return makeHasArgsType(m["Manager"], m["Type"], args...)
+	return makeHasArgsType(node.Metadata["Manager"], node.Metadata["Type"], args...)
 }
 
 func queryNodeCreation(t *testing.T, c *CheckContext, query g.QueryString) (node *graph.Node, err error) {
@@ -170,10 +169,9 @@ func testNodeCreation(t *testing.T, setupCmds, tearDownCmds []Cmd, mngr, typ str
 				return err
 			}
 
-			m := map[string]interface{}(obj.Metadata)
 			for _, field := range fields {
 				field = k8s.MetadataField(field)
-				if _, err := common.GetMapField(m, field); err != nil {
+				if _, err := obj.GetField(field); err != nil {
 					return fmt.Errorf("Node '%s %s' missing field: %s", typ, name, field)
 				}
 			}
